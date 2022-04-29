@@ -1,16 +1,8 @@
-# Config Map
-kind: ConfigMap 
-apiVersion: v1 
-metadata:
-  name: springapp-configmap
-data:
-  # Configuration values can be set as key-value properties
-  username: springapp
-  password: mongodb@123
----
+
+
 # Replication Controller for springapp
 apiVersion: v1
-kind: ReplicationController
+kind: Deployment
 metadata:
   name: spring-controller
 spec:
@@ -29,16 +21,19 @@ spec:
         - containerPort: 8080  
         env:
         - name: MONGO_DB_HOSTNAME
-          value: mongo
+          valueFrom: 
+            secretKeyRef:
+              name: springboot-secret
+              key: hostname
         - name: MONGO_INITDB_ROOT_USERNAME
           valueFrom:
-            configMapKeyRef:
-              name: springapp-configmap
+            secretKeyRef:
+              name: springapp-secret
               key: username 
         - name: MONGO_INITDB_ROOT_PASSWORD
           valueFrom:
-            configMapKeyRef:
-              name: springapp-configmap
+            secretKeyRef:
+              name: springapp-secret
               key: password       
 ---
 # Node Port Service For SpringApp
@@ -56,7 +51,7 @@ spec:
 ---
 # Mongo RC with host path Volume
 apiVersion: v1
-kind: ReplicationController
+kind: StatefulSet
 metadata:
   name: mongo-controller
 spec:
@@ -74,13 +69,13 @@ spec:
         env:
         - name: MONGO_INITDB_ROOT_USERNAME
           valueFrom:
-            configMapKeyRef:
-              name: springapp-configmap
+            secretKeyRef:
+              name: springapp-secret
               key: username 
         - name: MONGO_INITDB_ROOT_PASSWORD
           valueFrom:
-            configMapKeyRef:
-              name: springapp-configmap
+            secretKeyRef:
+              name: springapp-secret
               key: password 
         ports:
         - containerPort: 27017
